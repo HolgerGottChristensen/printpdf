@@ -1,8 +1,8 @@
 //! Abstraction class for images. Please use this class
 //! instead of adding `ImageXObjects` yourself
 
-use crate::{Pt, PdfLayerReference, Px, XObject, XObjectRef};
-use lopdf::{Stream, Object};
+use crate::{PdfLayerReference, Pt, Px, XObject, XObjectRef};
+use lopdf::{Object, Stream};
 use std::{error, fmt};
 
 /// SVG - wrapper around an `XObject` to allow for more
@@ -62,7 +62,6 @@ pub struct SvgRotation {
 }
 
 fn export_svg_to_xobject_pdf(svg: &str) -> Result<Stream, String> {
-
     use pdf_writer::{Content, Finish, Name, PdfWriter, Rect, Ref};
 
     // Allocate the indirect reference IDs and names.
@@ -129,7 +128,6 @@ pub struct SvgXObjectRef {
 
 impl SvgXObjectRef {
     pub fn add_to_layer(self, layer: &PdfLayerReference, transform: SvgTransform) {
-
         use crate::CurTransMat;
 
         // PDF maps an image to a 1x1 square, we have to adjust the transform matrix
@@ -154,17 +152,14 @@ impl SvgXObjectRef {
                 Pt(-rotate.rotation_center_x.0),
                 Pt(-rotate.rotation_center_y.0),
             ));
-            transforms.push(CurTransMat::Rotate(
-                rotate.angle_ccw_degrees,
-            ));
+            transforms.push(CurTransMat::Rotate(rotate.angle_ccw_degrees));
             transforms.push(CurTransMat::Translate(
-               rotate.rotation_center_x,
-               rotate.rotation_center_y,
+                rotate.rotation_center_x,
+                rotate.rotation_center_y,
             ));
         }
 
-        if transform.translate_x.is_some() ||
-           transform.translate_y.is_some() {
+        if transform.translate_x.is_some() || transform.translate_y.is_some() {
             transforms.push(CurTransMat::Translate(
                 transform.translate_x.unwrap_or(Pt(0.0)),
                 transform.translate_y.unwrap_or(Pt(0.0)),
@@ -233,7 +228,6 @@ impl Svg {
     /// the reference to the SVG, so that one SVG can be used more
     /// than once on a page
     pub fn into_xobject(self, layer: &PdfLayerReference) -> SvgXObjectRef {
-
         let width = self.width.clone();
         let height = self.height.clone();
         let xobject_ref = layer.add_xobject(XObject::External(self.svg_xobject));

@@ -12,8 +12,8 @@ use lopdf;
 
 use indices::*;
 use {
-    ExternalFont, Font, PdfPage, FontList, IccProfileList, PdfMetadata, PdfConformance, IndirectFontRef,
-    DirectFontRef, BuiltinFont, PdfPageReference, Error, Mm, FontData
+    BuiltinFont, DirectFontRef, Error, ExternalFont, Font, FontData, FontList, IccProfileList,
+    IndirectFontRef, Mm, PdfConformance, PdfMetadata, PdfPage, PdfPageReference,
 };
 
 /// PDF document
@@ -45,7 +45,6 @@ pub struct PdfDocumentReference {
 }
 
 impl PdfDocument {
-
     /// Creates a new PDF document
     #[inline]
     #[cfg_attr(feature = "cargo-clippy", allow(new_ret_no_self))]
@@ -55,7 +54,9 @@ impl PdfDocument {
         initial_page_height: Mm,
         initial_layer_name: S2,
     ) -> (PdfDocumentReference, PdfPageIndex, PdfLayerIndex)
-    where S1: Into<String>, S2: Into<String>
+    where
+        S1: Into<String>,
+        S2: Into<String>,
     {
         let doc = Self {
             pages: Vec::new(),
@@ -73,11 +74,18 @@ impl PdfDocument {
             initial_page_width,
             initial_page_height,
             initial_layer_name,
-            0);
+            0,
+        );
 
-        { doc_ref.borrow_mut().pages.push(initial_page); }
+        {
+            doc_ref.borrow_mut().pages.push(initial_page);
+        }
 
-        (PdfDocumentReference { document: doc_ref }, PdfPageIndex(0), layer_index)
+        (
+            PdfDocumentReference { document: doc_ref },
+            PdfPageIndex(0),
+            layer_index,
+        )
     }
 
     pub fn empty<S: Into<String>>(document_title: S) -> PdfDocumentReference {
@@ -115,77 +123,84 @@ macro_rules! implement_adding_fonts {
             let mut doc = $self.document.borrow_mut();
             let direct_ref = DirectFontRef {
                 inner_obj: doc.inner_doc.new_object_id(),
-                data: $font
+                data: $font,
             };
 
             doc.fonts.add_font(font_ref.clone(), direct_ref);
             Ok(font_ref)
         }
-    }}
+    }};
 }
 
 impl PdfDocumentReference {
-
     // ----- BUILDER FUNCTIONS
 
     /// Changes the title on both the document info dictionary as well as the metadata
     #[inline]
-    pub fn with_title<S>(self, new_title: S)
-    -> Self where S: Into<String>
+    pub fn with_title<S>(self, new_title: S) -> Self
+    where
+        S: Into<String>,
     {
         self.document.borrow_mut().metadata.document_title = new_title.into();
         self
     }
-    
+
     /// Changes the author metadata property on both the document info dictionary as well as the metadata
     #[inline]
-    pub fn with_author<S>(self, author: S)
-    -> Self where S: Into<String>
+    pub fn with_author<S>(self, author: S) -> Self
+    where
+        S: Into<String>,
     {
         self.document.borrow_mut().metadata.author = author.into();
         self
     }
-    
+
     /// Changes the creator metadata property on both the document info dictionary as well as the metadata
     #[inline]
-    pub fn with_creator<S>(self, creator: S)
-    -> Self where S: Into<String>
+    pub fn with_creator<S>(self, creator: S) -> Self
+    where
+        S: Into<String>,
     {
         self.document.borrow_mut().metadata.creator = creator.into();
         self
     }
-     
+
     /// Changes the producer/publisher metadata property on both the document info dictionary as well as the metadata
     #[inline]
-    pub fn with_producer<S>(self, producer: S)
-    -> Self where S: Into<String>
+    pub fn with_producer<S>(self, producer: S) -> Self
+    where
+        S: Into<String>,
     {
         self.document.borrow_mut().metadata.producer = producer.into();
         self
     }
-    
+
     /// Changes the keywords metadata property on both the document info dictionary as well as the metadata
     #[inline]
-    pub fn with_keywords<S>(self, keywords: Vec<S>)
-    -> Self where S: Into<String>
+    pub fn with_keywords<S>(self, keywords: Vec<S>) -> Self
+    where
+        S: Into<String>,
     {
-        self.document.borrow_mut().metadata.keywords = keywords.into_iter().map(|s| s.into()).collect();
+        self.document.borrow_mut().metadata.keywords =
+            keywords.into_iter().map(|s| s.into()).collect();
         self
     }
 
     /// Changes the subject metadata property on both the document info dictionary as well as the metadata
     #[inline]
-    pub fn with_subject<S>(self, subject: S)
-    -> Self where S: Into<String>
+    pub fn with_subject<S>(self, subject: S) -> Self
+    where
+        S: Into<String>,
     {
         self.document.borrow_mut().metadata.subject = subject.into();
         self
     }
-    
+
     /// Changes the subject metadata property on both the document info dictionary as well as the metadata
     #[inline]
-    pub fn with_identifier<S>(self, identifier: S)
-    -> Self where S: Into<String>
+    pub fn with_identifier<S>(self, identifier: S) -> Self
+    where
+        S: Into<String>,
     {
         self.document.borrow_mut().metadata.identifier = identifier.into();
         self
@@ -193,27 +208,21 @@ impl PdfDocumentReference {
 
     /// Set the trapping of the document
     #[inline]
-    pub fn with_trapping(self, trapping: bool)
-    -> Self
-    {
+    pub fn with_trapping(self, trapping: bool) -> Self {
         self.document.borrow_mut().metadata.trapping = trapping;
         self
     }
 
     /// Sets the document ID (for comparing two PDF documents for equality)
     #[inline]
-    pub fn with_document_id(self, id: String)
-    -> Self
-    {
+    pub fn with_document_id(self, id: String) -> Self {
         self.document.borrow_mut().metadata.xmp_metadata.document_id = id;
         self
     }
 
     /// Set the version of the document
     #[inline]
-    pub fn with_document_version(self, version: u32)
-    -> Self
-    {
+    pub fn with_document_version(self, version: u32) -> Self {
         self.document.borrow_mut().metadata.document_version = version;
         self
     }
@@ -221,9 +230,7 @@ impl PdfDocumentReference {
     /// Changes the conformance of this document. It is recommended to call
     /// `check_for_errors()` after changing it.
     #[inline]
-    pub fn with_conformance(self, conformance: PdfConformance)
-    -> Self
-    {
+    pub fn with_conformance(self, conformance: PdfConformance) -> Self {
         self.document.borrow_mut().metadata.conformance = conformance;
         self
     }
@@ -232,9 +239,7 @@ impl PdfDocumentReference {
     ///
     /// Per default, the creation date is set to the current time.
     #[inline]
-    pub fn with_creation_date(self, creation_date: OffsetDateTime)
-    -> Self
-    {
+    pub fn with_creation_date(self, creation_date: OffsetDateTime) -> Self {
         self.document.borrow_mut().metadata.creation_date = creation_date;
         self
     }
@@ -243,9 +248,7 @@ impl PdfDocumentReference {
     ///
     /// By default, the metadata date is set to the current time.
     #[inline]
-    pub fn with_metadata_date(self, metadata_date: OffsetDateTime)
-    -> Self
-    {
+    pub fn with_metadata_date(self, metadata_date: OffsetDateTime) -> Self {
         self.document.borrow_mut().metadata.metadata_date = metadata_date;
         self
     }
@@ -253,9 +256,7 @@ impl PdfDocumentReference {
     /// Sets the modification date on the document. Intended to be used when
     /// reading documents that already have a modification date.
     #[inline]
-    pub fn with_mod_date(self, mod_date: OffsetDateTime)
-    -> Self
-    {
+    pub fn with_mod_date(self, mod_date: OffsetDateTime) -> Self {
         self.document.borrow_mut().metadata.modification_date = mod_date;
         self
     }
@@ -310,12 +311,18 @@ impl PdfDocumentReference {
     }
 
     /// Add a font from a custom font backend
-    pub fn add_external_font_data<F>(&self, bytes: Vec<u8>, data: F)
-    -> ::std::result::Result<IndirectFontRef, Error>
+    pub fn add_external_font_data<F>(
+        &self,
+        bytes: Vec<u8>,
+        data: F,
+    ) -> ::std::result::Result<IndirectFontRef, Error>
     where
         F: FontData + 'static,
     {
-        let last_font_index = { let doc = self.document.borrow(); doc.fonts.len() };
+        let last_font_index = {
+            let doc = self.document.borrow();
+            doc.fonts.len()
+        };
         let external_font = ExternalFont::with_font_data(bytes, last_font_index, Box::new(data));
         let external_font_name = external_font.face_name.clone();
         let font = Font::ExternalFont(external_font);
@@ -328,9 +335,10 @@ impl PdfDocumentReference {
     /// [Windows-1252][] encoding.  All other characters will be ignored.
     ///
     /// [Windows-1252]: https://en.wikipedia.org/wiki/Windows-1252
-    pub fn add_builtin_font(&self, builtin_font: BuiltinFont)
-    -> ::std::result::Result<IndirectFontRef, Error>
-    {
+    pub fn add_builtin_font(
+        &self,
+        builtin_font: BuiltinFont,
+    ) -> ::std::result::Result<IndirectFontRef, Error> {
         let builtin_font_name: &'static str = builtin_font.clone().into();
         implement_adding_fonts!(&self, builtin_font_name, Font::BuiltinFont(builtin_font))
     }
@@ -340,19 +348,18 @@ impl PdfDocumentReference {
     /// Returns the page (for inserting content)
     #[inline]
     #[cfg_attr(feature = "cargo-clippy", allow(unnecessary_operation))]
-    pub fn get_page(&self, page: PdfPageIndex)
-    -> PdfPageReference
-    {
+    pub fn get_page(&self, page: PdfPageIndex) -> PdfPageReference {
         &self.document.borrow_mut().pages[page.0];
-        PdfPageReference { document: Rc::downgrade(&self.document).clone(), page }
+        PdfPageReference {
+            document: Rc::downgrade(&self.document).clone(),
+            page,
+        }
     }
 
     /// Returns a direct reference (object ID) to the font from an
     /// indirect reference (postscript name)
     #[inline]
-    pub fn get_font(&self, font: &IndirectFontRef)
-    -> Option<DirectFontRef>
-    {
+    pub fn get_font(&self, font: &IndirectFontRef) -> Option<DirectFontRef> {
         let doc = self.document.borrow();
         doc.fonts.get_font(font)
     }
@@ -360,9 +367,7 @@ impl PdfDocumentReference {
     /// Drops the PDFDocument, returning the inner `lopdf::Document`.
     /// Document may be only half-written, use only in extreme cases
     #[inline]
-    pub unsafe fn get_inner(self)
-    -> lopdf::Document
-    {
+    pub unsafe fn get_inner(self) -> lopdf::Document {
         let doc = Rc::try_unwrap(self.document).unwrap().into_inner();
         doc.inner_doc
     }
@@ -370,11 +375,10 @@ impl PdfDocumentReference {
     // --- MISC FUNCTIONS
 
     /// Checks for invalid settings in the document
-    pub fn check_for_errors(&self)
-    -> ::std::result::Result<(), Error>
-    {
+    pub fn check_for_errors(&self) -> ::std::result::Result<(), Error> {
         // TODO
-        #[cfg(feature = "logging")] {
+        #[cfg(feature = "logging")]
+        {
             warn!("Checking PDFs for errors is currently not supported!");
         }
 
@@ -383,11 +387,10 @@ impl PdfDocumentReference {
 
     /// Tries to match the document to the given conformance.
     /// Errors only on an unrecoverable error.
-    pub fn repair_errors(&self, _conformance: PdfConformance)
-    -> ::std::result::Result<(), Error>
-    {
+    pub fn repair_errors(&self, _conformance: PdfConformance) -> ::std::result::Result<(), Error> {
         // TODO
-        #[cfg(feature = "logging")] {
+        #[cfg(feature = "logging")]
+        {
             warn!("Reparing PDFs is currently not supported!");
         }
 
@@ -397,7 +400,6 @@ impl PdfDocumentReference {
     /// Save PDF document to bytes
     #[allow(unused_qualifications)]
     pub fn save_to_bytes(self) -> Result<Vec<u8>, Error> {
-
         use lopdf::Object::*;
         use lopdf::StringFormat::Literal;
         use lopdf::{Dictionary as LoDictionary, Object as LoObject};
@@ -474,10 +476,10 @@ impl PdfDocumentReference {
         }
 
         let mut pages = LoDictionary::from_iter(vec![
-                      ("Type", "Pages".into()),
-                      ("Count", Integer(doc.pages.len() as i64)),
-                      /* Kids and Resources missing */
-                      ]);
+            ("Type", "Pages".into()),
+            ("Count", Integer(doc.pages.len() as i64)),
+            /* Kids and Resources missing */
+        ]);
 
         // add all pages with contents
         let mut page_ids = Vec::<LoObject>::new();
@@ -485,64 +487,84 @@ impl PdfDocumentReference {
         // ----- OCG CONTENT
 
         // page index + page names to add the OCG to the /Catalog
-        let page_layer_names: Vec<(usize, Vec<::std::string::String>)> =
-            doc.pages.iter().map(|page|
-                (page.index, page.layers.iter().map(|layer|
-                    layer.name.clone()).collect()
-            )).collect();
+        let page_layer_names: Vec<(usize, Vec<::std::string::String>)> = doc
+            .pages
+            .iter()
+            .map(|page| {
+                (
+                    page.index,
+                    page.layers.iter().map(|layer| layer.name.clone()).collect(),
+                )
+            })
+            .collect();
 
         // add optional content groups (layers) to the /Catalog
         let usage_ocg_dict = LoDictionary::from_iter(vec![
             ("Type", Name("OCG".into())),
-            ("CreatorInfo", Dictionary(LoDictionary::from_iter(vec![
-                ("Creator", String("Adobe Illustrator 14.0".into(), Literal)),
-                ("Subtype", Name("Artwork".into()))
-            ]))),
+            (
+                "CreatorInfo",
+                Dictionary(LoDictionary::from_iter(vec![
+                    ("Creator", String("Adobe Illustrator 14.0".into(), Literal)),
+                    ("Subtype", Name("Artwork".into())),
+                ])),
+            ),
         ]);
 
         let usage_ocg_dict_ref = doc.inner_doc.add_object(Dictionary(usage_ocg_dict));
 
-        let intent_arr = Array(vec![
-            Name("View".into()),
-            Name("Design".into()),
-        ]);
+        let intent_arr = Array(vec![Name("View".into()), Name("Design".into())]);
 
         let intent_arr_ref = doc.inner_doc.add_object(intent_arr);
 
         // page index, layer index, reference to OCG dictionary
-        let ocg_list: Vec<(usize, Vec<(usize, lopdf::Object)>)> =
+        let ocg_list: Vec<(usize, Vec<(usize, lopdf::Object)>)> = page_layer_names
+            .into_iter()
+            .map(|(page_idx, layer_names)| {
+                (
+                    page_idx,
+                    layer_names
+                        .into_iter()
+                        .enumerate()
+                        .map(|(layer_idx, layer_name)| {
+                            (
+                                layer_idx,
+                                Reference(doc.inner_doc.add_object(Dictionary(
+                                    LoDictionary::from_iter(vec![
+                                        ("Type", Name("OCG".into())),
+                                        ("Name", String(layer_name.into(), Literal)),
+                                        ("Intent", Reference(intent_arr_ref)),
+                                        ("Usage", Reference(usage_ocg_dict_ref)),
+                                    ]),
+                                ))),
+                            )
+                        })
+                        .collect(),
+                )
+            })
+            .collect();
 
-        page_layer_names.into_iter().map(|(page_idx, layer_names)|
-            (page_idx,
-            layer_names.into_iter().enumerate().map(|(layer_idx, layer_name)|
-                (layer_idx,
-                Reference(doc.inner_doc.add_object(
+        let flattened_ocg_list: Vec<lopdf::Object> = ocg_list
+            .iter()
+            .flat_map(|&(_, ref layers)| layers.iter().map(|&(_, ref obj)| obj.clone()))
+            .collect();
+
+        catalog.set(
+            "OCProperties",
+            Dictionary(LoDictionary::from_iter(vec![
+                ("OCGs", Array(flattened_ocg_list.clone())),
+                // optional content configuration dictionary, page 376
+                (
+                    "D",
                     Dictionary(LoDictionary::from_iter(vec![
-                        ("Type", Name("OCG".into())),
-                        ("Name", String(layer_name.into(), Literal)),
-                        ("Intent", Reference(intent_arr_ref)),
-                        ("Usage", Reference(usage_ocg_dict_ref))
-                    ]))
-                )))
-            ).collect()))
-        .collect();
-
-        let flattened_ocg_list: Vec<lopdf::Object> =
-            ocg_list.iter().flat_map(|&(_, ref layers)|
-                layers.iter().map(|&(_, ref obj)| obj.clone())
-            ).collect();
-
-        catalog.set("OCProperties", Dictionary(LoDictionary::from_iter(vec![
-            ("OCGs", Array(flattened_ocg_list.clone())),
-            // optional content configuration dictionary, page 376
-            ("D", Dictionary(LoDictionary::from_iter(vec![
-                ("Order", Array(flattened_ocg_list.clone())),
-                // "radio button groups"
-                ("RBGroups", Array(vec![])),
-                // initially visible OCG
-                ("ON", Array(flattened_ocg_list)),
-            ])))
-        ])));
+                        ("Order", Array(flattened_ocg_list.clone())),
+                        // "radio button groups"
+                        ("RBGroups", Array(vec![])),
+                        // initially visible OCG
+                        ("ON", Array(flattened_ocg_list)),
+                    ])),
+                ),
+            ])),
+        );
 
         // ----- END OCG CONTENT (on document level)
 
@@ -599,7 +621,8 @@ impl PdfDocumentReference {
                 layer_streams_merged_vec.append(&mut stream.content);
             }
 
-            let merged_layer_stream = lopdf::Stream::new(lopdf::Dictionary::new(), layer_streams_merged_vec);
+            let merged_layer_stream =
+                lopdf::Stream::new(lopdf::Dictionary::new(), layer_streams_merged_vec);
             let page_content_id = doc.inner_doc.add_object(merged_layer_stream);
 
             p.set("Contents", Reference(page_content_id));
@@ -636,17 +659,18 @@ impl PdfDocumentReference {
                 bookmarks_list.set("First", Reference(obj_ref));
                 bookmarks_list.set("Last", Reference(obj_ref));
             } else {
-                let mut sorted_bmarks: Vec<(&usize, &std::string::String)> = doc.bookmarks.iter().collect();
+                let mut sorted_bmarks: Vec<(&usize, &std::string::String)> =
+                    doc.bookmarks.iter().collect();
                 sorted_bmarks.sort();
                 for (i, (page_index, b_name)) in sorted_bmarks.iter().enumerate() {
                     let dest = (
                         "Dest",
                         Array(vec![
                             Reference(page_id_to_obj.get(page_index).unwrap().to_owned()),
-                                "XYZ".into(),
-                                Null,
-                                Null,
-                                Null,
+                            "XYZ".into(),
+                            Null,
+                            Null,
+                            Null,
                         ]),
                     );
                     doc.inner_doc
@@ -654,7 +678,10 @@ impl PdfDocumentReference {
                             bookmarks_list.set("First", Reference((doc.inner_doc.max_id + 1, 0)));
                             vec![
                                 ("Parent", Reference(bookmarks_id)),
-                                ("Title", String(b_name.to_owned().to_owned().into(), Literal)),
+                                (
+                                    "Title",
+                                    String(b_name.to_owned().to_owned().into(), Literal),
+                                ),
                                 ("Next", Reference((doc.inner_doc.max_id + 2, 0))),
                                 dest,
                             ]
@@ -662,14 +689,20 @@ impl PdfDocumentReference {
                             bookmarks_list.set("Last", Reference((doc.inner_doc.max_id + 1, 0)));
                             vec![
                                 ("Parent", Reference(bookmarks_id)),
-                                ("Title", String(b_name.to_owned().to_owned().into(), Literal)),
+                                (
+                                    "Title",
+                                    String(b_name.to_owned().to_owned().into(), Literal),
+                                ),
                                 ("Prev", Reference((doc.inner_doc.max_id, 0))),
                                 dest,
                             ]
                         } else {
                             vec![
                                 ("Parent", Reference(bookmarks_id)),
-                                ("Title", String(b_name.to_owned().to_owned().into(), Literal)),
+                                (
+                                    "Title",
+                                    String(b_name.to_owned().to_owned().into(), Literal),
+                                ),
                                 ("Prev", Reference((doc.inner_doc.max_id, 0))),
                                 ("Next", Reference((doc.inner_doc.max_id + 2, 0))),
                                 dest,
@@ -714,7 +747,6 @@ impl PdfDocumentReference {
         Ok(bytes)
     }
 
-
     /// Save PDF Document, writing the contents to the target
     pub fn save<W: Write>(self, target: &mut BufWriter<W>) -> Result<(), Error> {
         let pdf_as_bytes = self.save_to_bytes()?;
@@ -722,14 +754,13 @@ impl PdfDocumentReference {
         Ok(())
     }
 
-    #[cfg(any(debug_assertions, feature="less-optimization"))]
+    #[cfg(any(debug_assertions, feature = "less-optimization"))]
     #[inline]
-    fn optimize(_: &mut lopdf::Document) { }
+    fn optimize(_: &mut lopdf::Document) {}
 
-    #[cfg(all(not(debug_assertions), not(feature="less-optimization")))]
+    #[cfg(all(not(debug_assertions), not(feature = "less-optimization")))]
     #[inline]
-    fn optimize(doc: &mut lopdf::Document)
-    {
+    fn optimize(doc: &mut lopdf::Document) {
         doc.prune_objects();
         doc.delete_zero_length_streams();
         doc.compress();
